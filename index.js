@@ -55,7 +55,7 @@ app.delete("/api/employees/:id", async (req, res, next) => {
     next(ex);
   }
 });
-app.puy("/api/employees/:id", async (req, res, next) => {
+app.put("/api/employees/:id", async (req, res, next) => {
   try {
     const { name, department_id } = req.body;
     const SQL = `
@@ -73,3 +73,42 @@ app.puy("/api/employees/:id", async (req, res, next) => {
     next(ex);
   }
 });
+app.use((err, req, res, next) => {
+  console.log(err.stack);
+  res.status(500).send({ error: err.message });
+});
+
+const init = async () => {
+  try {
+    await client.connect();
+    let SQL = `
+        DROP TABLE IF EXISTS employees;
+        DROP TABLE IF EXISTS departments;
+        CREATE TABLE departments(
+          id SERIAL PRIMARY KEY,
+          name VARCHAR(100)
+        );
+        CREATE TABLE employees(
+          id SERIAL PRIMARY KEY,
+          name VARCHAR(255) NOT NULL,
+          created_at TIMESTAMP DEFAULT now(),
+          updated_at TIMESTAMP DEFAULT now(),
+          department_id INTEGER REFERENCES departments(id) NOT NULL
+        );
+      `;
+    await client.query(SQL);
+    console.log("Tables created");
+    SQL = `INSERT INTO departments(name) VALUES('HR');
+        INSERT INTO departments(name) VALUES('Finance');
+        INSERT INTO employees(name, department_id) VALUES('John Doe', 1);
+        INSERT INTO employees(name, department_id) VALUES('Jane Smith', 2);
+      `;
+    await client.query(SQL);
+    console.log("Data seeded");
+    app.listen(port, () => console.log(`listening on port ${port}`));
+  } catch (error) {
+    console.error("Error initializing server:", error);
+    process.exit(1);
+  }
+};
+init();
