@@ -55,3 +55,21 @@ app.delete("/api/employees/:id", async (req, res, next) => {
     next(ex);
   }
 });
+app.puy("/api/employees/:id", async (req, res, next) => {
+  try {
+    const { name, department_id } = req.body;
+    const SQL = `
+            UPDATE employees
+            SET name=$1, department_id=$2
+            WHERE id=$3
+            RETURNING *`;
+    const response = await client.query(SQL, [
+      name,
+      department_id,
+      req.params.id,
+    ]);
+    res.send(response.rows[0]);
+  } catch (ex) {
+    next(ex);
+  }
+});
